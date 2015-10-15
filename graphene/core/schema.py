@@ -1,12 +1,17 @@
 from functools import wraps
 from collections import OrderedDict
 
+from graphql.core import graphql
 from graphql.core.type import (
     GraphQLSchema as _GraphQLSchema
 )
 
 from graphql.core.execution.executor import Executor
 from graphql.core.execution.middlewares.sync import SynchronousExecutionMiddleware
+from graphql.core.execution import ExecutionResult, execute
+from graphql.core.language.parser import parse
+from graphql.core.language.source import Source
+from graphql.core.validation import validate
 
 from graphql.core.utils.introspection_query import introspection_query
 from graphene import signals
@@ -47,6 +52,7 @@ class Schema(object):
     def executor(self):
         if not self._executor:
             self.executor = Executor([SynchronousExecutionMiddleware()], map_type=OrderedDict)
+
         return self._executor
 
     @executor.setter
@@ -75,13 +81,13 @@ class Schema(object):
     def types(self):
         return self._internal_types
 
-    def execute(self, request='', root=None, vars=None, operation_name=None, **kwargs):
+    def execute(self, request='', root=None, variables=None, operation_name=None, **kwargs):
         root = root or object()
         return self.executor.execute(
             self.schema,
-            request,
+            request=request,
             root=self.query(root),
-            args=vars,
+            args=variables,
             operation_name=operation_name,
             **kwargs
         )
